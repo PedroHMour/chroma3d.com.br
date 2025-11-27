@@ -1,0 +1,138 @@
+.header {
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  transition: background-color 0.4s ease-out, box-shadow 0.4s ease-out, backdrop-filter 0.4s ease-out;
+  background-color: transparent;
+}
+
+.scrolled {
+  background-color: rgba(28, 28, 30, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.navLinks {
+  display: flex;
+  list-style: none;
+  gap: 2.5rem;
+}
+
+.navLinks a {
+  color: var(--cor-neutra-cinza-claro);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  position: relative;
+  padding: 5px 0;
+  transition: color 0.3s ease;
+}
+
+.navLinks a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background-color: var(--cor-primaria-azul);
+  transition: width 0.3s ease;
+}
+
+.navLinks a:hover {
+  color: #FFFFFF;
+}
+
+.navLinks a:hover::after {
+  width: 100%;
+}
+
+.actionIcons {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Mobile styles */
+.mobileMenuButton {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: var(--cor-neutra-cinza-claro);
+  z-index: 1001;
+}
+
+.mobileMenu {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  .navLinks {
+    display: none;
+  }
+
+  .mobileMenuButton {
+    display: block;
+  }
+
+  .actionIcons {
+    gap: 1rem;
+  }
+
+  .mobileMenu {
+    display: block;
+    position: absolute;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    background-color: rgba(28, 28, 30, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    padding: 1rem 0;
+  }
+
+  .mobileNavLinks {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+  }
+
+  .mobileNavLinks li {
+    padding: 1.2rem 0;
+    border-bottom: 1px solid var(--cor-neutra-borda);
+  }
+  
+  .mobileNavLinks li:last-child {
+    border-bottom: none;
+  }
+
+  .mobileNavLinks a {
+    color: var(--cor-neutra-cinza-claro);
+    text-decoration: none;
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+}
