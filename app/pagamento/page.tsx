@@ -45,6 +45,7 @@ export default function PagamentoPage() {
   const [pixCode, setPixCode] = useState('');
   const [erroMsg, setErroMsg] = useState('');
 
+  // Estado para os dados do cartão
   const [cardData, setCardData] = useState({ number: '', name: '', expiry: '', cvv: '', type: 'credit' });
 
   useEffect(() => {
@@ -73,19 +74,31 @@ export default function PagamentoPage() {
       produto_nome: cliente.nomeProduto,
     };
 
+    // Se for cartão, prepara os dados (mesmo que a API ainda não processe)
     if (metodo === 'card') {
-      // Lógica de cartão se necessário
-      setErroMsg("Pagamento em cartão indisponível no momento.");
-      setStatus('erro');
+      payload.card_number = cardData.number.replace(/\s/g, '');
+      payload.card_name = cardData.name;
+      payload.card_expiry = cardData.expiry;
+      payload.card_cvv = cardData.cvv;
+      payload.card_type = cardData.type;
+      
+      // ⚠️ IMPORTANTE: Como sua API Python atual só tem a rota /api/pix, 
+      // o cartão vai dar erro se tentar enviar. 
+      // Deixei um aviso amigável simulando "Manutenção" ou "Erro" por enquanto.
+      setTimeout(() => {
+          setErroMsg("Pagamento via cartão temporariamente indisponível. Tente Pix.");
+          setStatus('erro');
+      }, 1500);
       return;
     }
 
     try {
-      // ATENÇÃO: Pega a URL da variável de ambiente da Vercel
+      // Pega a URL da API do Render
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       
-      if (!apiUrl) throw new Error("Erro de Configuração: API URL não definida.");
+      if (!apiUrl) throw new Error("Configuração de API ausente.");
 
+      // Chama a API (apenas rota Pix configurada no Python por enquanto)
       const response = await fetch(`${apiUrl}/api/pix`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,13 +114,10 @@ export default function PagamentoPage() {
       if (metodo === 'pix') {
         if (res.copia_cola) {
           setPixCode(res.copia_cola);
-          // Salva para a página de obrigado
           localStorage.setItem('chroma_payment_data', JSON.stringify({ type: 'pix', payload: res.copia_cola }));
           setStatus('sucesso_pix');
-          // Opcional: Redirecionar para /obrigado
-          // router.push('/obrigado');
         } else {
-          throw new Error('Código Pix não gerado.');
+          throw new Error('Código Pix não gerado pela operadora.');
         }
       }
 
@@ -144,9 +154,12 @@ export default function PagamentoPage() {
           Valor da Entrada: <span className="text-[#00E676] font-bold text-lg">R$ 990,00</span>
         </p>
 
+        {/* SELEÇÃO DE MÉTODO (PIX E CARTÃO) */}
         {status === 'escolha' && !metodo && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-400 mb-4">Escolha como deseja pagar:</p>
+            <p className="text-sm text-gray-400 mb-4">Escolha como deseja pagar a entrada:</p>
+            
+            {/* Botão Pix */}
             <button onClick={() => setMetodo('pix')} className="w-full bg-[#1A1A1A] hover:bg-[#222] border border-white/10 hover:border-[#00E676]/50 p-5 rounded-xl flex items-center gap-4 transition-all group relative overflow-hidden">
               <div className="absolute left-0 top-0 h-full w-1 bg-[#00E676] scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
               <div className="w-12 h-12 bg-[#00E676]/10 text-[#00E676] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"><FaQrcode size={20} /></div>
@@ -155,11 +168,42 @@ export default function PagamentoPage() {
                 <p className="text-xs text-gray-500">Aprovação instantânea + QR Code</p>
               </div>
             </button>
+
+            {/* Botão Cartão (RESTAURADO) */}
+            <button onClick={() => setMetodo('card')} className="w-full bg-[#1A1A1A] hover:bg-[#222] border border-white/10 hover:border-[#0052FF]/50 p-5 rounded-xl flex items-center gap-4 transition-all group relative overflow-hidden">
+              <div className="absolute left-0 top-0 h-full w-1 bg-[#0052FF] scale-y-0 group-hover:scale-y-100 transition-transform origin-top" />
+              <div className="w-12 h-12 bg-[#0052FF]/10 text-[#0052FF] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"><FaCreditCard size={20} /></div>
+              <div className="text-left">
+                <p className="font-bold text-white text-lg">Cartão de Crédito</p>
+                <p className="text-xs text-gray-500">Parcele se necessário</p>
+              </div>
+            </button>
           </div>
         )}
 
+        {/* FORMULÁRIO DE CARTÃO (RESTAURADO) */}
+        {status === 'escolha' && metodo === 'card' && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="flex gap-2 bg-black/40 p-1 rounded-xl mb-6">
+              <button onClick={() => setCardData({ ...cardData, type: 'credit' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${cardData.type === 'credit' ? 'bg-[#0052FF] text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}>Crédito</button>
+              <button onClick={() => setCardData({ ...cardData, type: 'debit' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${cardData.type === 'debit' ? 'bg-[#0052FF] text-white shadow-lg' : 'text-gray-500 hover:bg-white/5'}`}>Débito</button>
+            </div>
+            <div className="space-y-3">
+              <input type="text" placeholder="Número do Cartão" className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl p-3 text-white focus:border-[#0052FF] outline-none" onChange={e => setCardData({ ...cardData, number: e.target.value })} />
+              <input type="text" placeholder="Nome Impresso" className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl p-3 text-white focus:border-[#0052FF] outline-none uppercase" onChange={e => setCardData({ ...cardData, name: e.target.value })} />
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" placeholder="MM/AAAA" className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl p-3 text-white focus:border-[#0052FF] outline-none" onChange={e => setCardData({ ...cardData, expiry: e.target.value })} />
+                <input type="text" placeholder="CVV" className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl p-3 text-white focus:border-[#0052FF] outline-none" onChange={e => setCardData({ ...cardData, cvv: e.target.value })} />
+              </div>
+            </div>
+            <button onClick={handlePagar} className="w-full bg-[#0052FF] hover:bg-[#0040C9] text-white font-bold py-4 rounded-full mt-6 transition-all hover:shadow-[0_0_20px_rgba(0,82,255,0.4)]">CONFIRMAR PAGAMENTO</button>
+            <button onClick={() => setMetodo(null)} className="w-full text-center text-xs text-gray-500 underline mt-2">Voltar</button>
+          </div>
+        )}
+
+        {/* CONFIRMAÇÃO PIX */}
         {status === 'escolha' && metodo === 'pix' && (
-          <div className="text-center">
+          <div className="text-center animate-fade-in">
             <div className="w-20 h-20 bg-[#00E676]/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <FaQrcode className="text-[#00E676] text-3xl" />
             </div>
@@ -170,6 +214,7 @@ export default function PagamentoPage() {
           </div>
         )}
 
+        {/* TELA DE PROCESSAMENTO */}
         {status === 'processando' && (
           <div className="text-center py-16">
             <div className="w-16 h-16 border-4 border-[#0052FF] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
@@ -178,6 +223,7 @@ export default function PagamentoPage() {
           </div>
         )}
 
+        {/* SUCESSO PIX */}
         {status === 'sucesso_pix' && (
           <div className="text-center animate-fade-in">
             <div className="bg-white p-4 rounded-2xl inline-block mb-6 shadow-lg">
@@ -195,12 +241,13 @@ export default function PagamentoPage() {
           </div>
         )}
 
+        {/* ERRO */}
         {status === 'erro' && (
-          <div className="text-center py-8">
+          <div className="text-center py-8 animate-fade-in">
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-red-500 text-3xl">!</span>
             </div>
-            <h3 className="text-red-500 font-bold text-xl mb-2">Erro no Pagamento</h3>
+            <h3 className="text-red-500 font-bold text-xl mb-2">Atenção</h3>
             <div className="bg-red-500/5 border border-red-500/20 p-4 rounded-xl text-xs text-red-300 font-mono text-left mb-6 break-words">
               {erroMsg}
             </div>
